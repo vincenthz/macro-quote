@@ -33,3 +33,15 @@ impl ToTokenTrees for proc_macro::TokenStream {
         ty.into_iter().collect::<Vec<_>>()
     }
 }
+
+impl ToTokenTrees for proc_macro::Literal {
+    fn generate(lit: Self) -> Vec<TokenTree> {
+        vec![lit.into()]
+    }
+}
+
+impl ToTokenTrees for proc_macro::Ident {
+    fn generate(ident: Self) -> Vec<TokenTree> {
+        vec![ident.into()]
+    }
+}
