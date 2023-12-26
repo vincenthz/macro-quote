@@ -1,3 +1,6 @@
+//! This is a helper module to workaround the inherent limitation in the proc-macro APIs
+//!
+//! Add some API for Literal shortcoming
 use alloc::string::{String, ToString};
 use proc_macro::Literal;
 

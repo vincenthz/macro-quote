@@ -1,0 +1,17 @@
+[package]
+name = "macro-quote-bench"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+quote = { version = "*", optional = true }
+macro-quote = { version = "*", path = "../", optional = true }
+macro-quote-types = { version = "*", path = "../macro-quote-types", optional = true }
+proc-quote = { version = "*", optional = true }
+
+[features]
+quote = ["dep:quote"]
+macro-quote = ["dep:macro-quote", "dep:macro-quote-types"]
+proc-quote = ["dep:proc-quote"]
