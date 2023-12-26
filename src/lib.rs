@@ -2,7 +2,7 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 use proc_macro::{Delimiter, Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 mod helper;
 mod output;
@@ -37,10 +37,7 @@ fn stream(out: &mut Output, it: TokenStream) {
     }
 }
 
-enum Repeat {
-    Separator(char),
-    NoSeparator,
-}
+struct Repeat(String);
 
 fn is_escape_punct(punct: &Punct) -> bool {
     punct.spacing() == Spacing::Alone && punct.as_char() == '#'
@@ -60,29 +57,26 @@ fn escape<I: Iterator<Item = TokenTree>>(
     match next {
         TokenTree::Group(grp) => {
             if grp.delimiter() == Delimiter::Parenthesis {
-                let repeat = match it.peek() {
-                    Some(TokenTree::Punct(p)) if p.as_char() == '*' => {
-                        it.next();
-                        Repeat::NoSeparator
-                    }
-                    Some(TokenTree::Punct(p1)) if p1.spacing() == Spacing::Joint => {
-                        let sep = p1.as_char();
-                        it.next();
-                        match it.peek() {
-                            Some(TokenTree::Punct(p2)) if p2.as_char() == '*' => {
-                                it.next();
-                                Repeat::Separator(sep)
-                            }
-                            _ => {
-                                panic!("separator need to be followed by '*' in group expansion")
+                let mut repeat = String::new();
+                loop {
+                    match it.peek() {
+                        Some(TokenTree::Punct(p)) if p.as_char() == '*' => {
+                            it.next();
+                            break;
+                        }
+                        Some(TokenTree::Punct(p)) => {
+                            if p.spacing() == Spacing::Joint {
+                                repeat.push(p.as_char());
+                            } else {
+                                panic!("")
                             }
                         }
+                        _ => {
+                            panic!("repeat need to terminate with a '*' character")
+                        }
                     }
-                    _ => {
-                        panic!("repetition need to be terminated by '*'");
-                    }
-                };
-                escape_group(out, grp.stream(), repeat);
+                }
+                escape_group(out, grp.stream(), Repeat(repeat));
             } else {
                 panic!("brace or paren group not supported in escape");
                 // out.push_punct(escape_punct);
@@ -192,11 +186,14 @@ fn escape_group(out: &mut Output, it: TokenStream, repeat: Repeat) {
                 inner.push_semicolon();
             }
             stream(inner, it);
-            match repeat {
-                Repeat::NoSeparator => {}
-                Repeat::Separator(c) => {
-                    inner.push_escaped_punct(Punct::new(c, Spacing::Alone));
-                }
+            let len = repeat.0.chars().count();
+            for (i, c) in repeat.0.chars().enumerate() {
+                let spacing = if i + 1 == len {
+                    Spacing::Alone
+                } else {
+                    Spacing::Joint
+                };
+                inner.push_escaped_punct(Punct::new(c, spacing));
             }
         });
         inner.push_ts()
