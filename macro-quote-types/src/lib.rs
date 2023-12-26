@@ -10,6 +10,12 @@ pub trait ToTokenTrees {
     fn generate(ty: Self) -> Vec<TokenTree>;
 }
 
+impl ToTokenTrees for &str {
+    fn generate(ty: Self) -> Vec<TokenTree> {
+        vec![Literal::string(ty).into()]
+    }
+}
+
 impl ToTokenTrees for alloc::string::String {
     fn generate(ty: Self) -> Vec<TokenTree> {
         vec![Literal::string(ty.as_str()).into()]
