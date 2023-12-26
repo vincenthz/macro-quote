@@ -70,6 +70,7 @@ fn escape<I: Iterator<Item = TokenTree>>(
                             } else {
                                 panic!("")
                             }
+                            it.next();
                         }
                         _ => {
                             panic!("repeat need to terminate with a '*' character")
