@@ -8,3 +8,4 @@ description = "lightweight quoter for proc macro generation"
 proc-macro = true
 
 [dependencies]
+macro-quote-types = { version = "0.1", path = "macro-quote-types" }

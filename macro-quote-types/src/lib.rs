@@ -3,6 +3,8 @@ extern crate alloc;
 
 extern crate proc_macro;
 
+pub mod ext;
+
 use alloc::{vec, vec::Vec};
 use proc_macro::{Literal, TokenTree};
 

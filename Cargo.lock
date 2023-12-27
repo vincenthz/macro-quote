@@ -5,3 +5,10 @@ version = 3
 [[package]]
 name = "macro-quote"
 version = "0.1.0"
+dependencies = [
+ "macro-quote-types",
+]
+
+[[package]]
+name = "macro-quote-types"
+version = "0.1.0"
