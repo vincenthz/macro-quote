@@ -2,11 +2,10 @@
 
 extern crate alloc;
 
-use alloc::{string::String, vec::Vec};
-use proc_macro::{Delimiter, Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 mod output;
 
-use macro_quote_types::ext::*;
+use alloc::{string::String, vec::Vec};
+use proc_macro::{Delimiter, Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 
 use output::Output;
 

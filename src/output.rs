@@ -1,7 +1,7 @@
 use alloc::{string::ToString, vec::Vec};
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 
-use super::helper::to_kind;
+use macro_quote_types::ext::literal_kind;
 
 /// lightweight wrapper to append easily to a (quasi) TokenStream
 pub(crate) struct Output(Vec<TokenTree>);
@@ -203,7 +203,7 @@ impl Output {
 
     /// Push a call to Literal::new(string, site) into ts
     pub fn push_escaped_literal(&mut self, lit: Literal) {
-        let kind = to_kind(&lit);
+        let kind = literal_kind(&lit);
         let method_name = kind.to_method_name();
         self.ts_extend_one_tokentreeable(|inner| {
             let span = lit.span();
