@@ -30,6 +30,12 @@ impl ToTokenTrees for u32 {
     }
 }
 
+impl ToTokenTrees for usize {
+    fn generate(ty: Self) -> Vec<TokenTree> {
+        vec![Literal::usize_suffixed(ty).into()]
+    }
+}
+
 impl ToTokenTrees for proc_macro::TokenStream {
     fn generate(ty: Self) -> Vec<TokenTree> {
         ty.into_iter().collect::<Vec<_>>()
