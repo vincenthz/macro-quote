@@ -12,7 +12,7 @@ use output::Output;
 #[proc_macro]
 pub fn quote(input: TokenStream) -> TokenStream {
     let mut out = Output::new();
-    out.push_new_ts(stream, input);
+    out.push_new_ts(stream, input, true);
     out.finalize()
 }
 

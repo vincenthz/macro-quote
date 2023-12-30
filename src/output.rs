@@ -35,6 +35,14 @@ impl Output {
     }
 
     #[inline]
+    pub fn push_dcolon_joint(&mut self) {
+        self.0
+            .push(TokenTree::from(Punct::new(':', Spacing::Joint)));
+        self.0
+            .push(TokenTree::from(Punct::new(':', Spacing::Joint)));
+    }
+
+    #[inline]
     pub fn push_dot(&mut self) {
         self.0
             .push(TokenTree::from(Punct::new('.', Spacing::Alone)));
@@ -64,10 +72,6 @@ impl Output {
         self.push_ident(Self::ts())
     }
 
-    pub fn push_ts_inner(&mut self) {
-        self.push_ident(Self::ts_inner())
-    }
-
     pub fn push_let_ident_eq(&mut self, mutable: bool, ident: &Ident) {
         self.push_ident(Ident::new("let", ident.span()));
         if mutable {
@@ -84,7 +88,7 @@ impl Output {
         self.push_punct(Punct::new('=', Spacing::Alone));
     }
 
-    pub fn push_new_ts<F>(&mut self, f: F, it: TokenStream)
+    pub fn push_new_ts<F>(&mut self, f: F, it: TokenStream, finalize: bool)
     where
         F: FnOnce(&mut Output, TokenStream),
     {
@@ -95,7 +99,11 @@ impl Output {
 
         f(&mut root, it);
 
-        root.push_ts();
+        if finalize {
+            root.tokentree_from_iter(Self::ts());
+        } else {
+            root.push_ts();
+        }
         self.push_grp(Group::new(Delimiter::Brace, root.finalize()));
     }
 
@@ -117,6 +125,7 @@ impl Output {
         self.arg0();
     }
 
+    /*
     pub fn bracket<F>(&mut self, gen: F)
     where
         F: FnOnce(&mut Output),
@@ -125,6 +134,7 @@ impl Output {
         gen(&mut inner);
         self.push_grp(Group::new(Delimiter::Bracket, inner.finalize()).into());
     }
+    */
 
     pub fn brace<F>(&mut self, gen: F)
     where
@@ -167,8 +177,12 @@ impl Output {
     {
         self.push_ts();
         self.push_dot();
-        self.push_ident(Ident::new("extend", Span::call_site()));
-        self.arg1(|gen1| f(gen1));
+        self.push_ident(Ident::new("append", Span::call_site()));
+        self.arg1(|gen1| {
+            gen1.push_punct(Punct::new('&', Spacing::Alone));
+            gen1.push_ident(Ident::new("mut", Span::call_site()));
+            f(gen1)
+        });
         self.push_semicolon();
     }
 
@@ -176,9 +190,14 @@ impl Output {
     where
         F: FnOnce(&mut Output),
     {
-        self.ts_extend(|inner| inner.wrap_vec(|inner| inner.wrap_tokentree(f)))
+        self.push_ts();
+        self.push_dot();
+        self.push_ident(Ident::new("push", Span::call_site()));
+        self.arg1(|gen1| gen1.wrap_tokentree(f));
+        self.push_semicolon();
     }
 
+    /*
     pub fn wrap_vec<F>(&mut self, f: F)
     where
         F: FnOnce(&mut Output),
@@ -188,6 +207,7 @@ impl Output {
             gen1.bracket(f);
         })
     }
+    */
 
     pub fn wrap_tokentree<F>(&mut self, f: F)
     where
@@ -199,6 +219,15 @@ impl Output {
             &["proc_macro", "TokenTree", "from"],
         );
         self.arg1(f);
+    }
+
+    pub fn tokentree_from_iter(&mut self, ident: Ident) {
+        self.push_path(
+            Span::call_site(),
+            true,
+            &["proc_macro", "TokenStream", "from_iter"],
+        );
+        self.arg1(|inner| inner.push_ident(ident))
     }
 
     /// Push a call to Literal::new(string, site) into ts
@@ -257,25 +286,26 @@ impl Output {
             Delimiter::None => "None",
         };
         self.push_let_ident_eq(false, &Self::ts_inner());
-        self.push_new_ts(f, g.stream());
+        self.push_new_ts(f, g.stream(), false);
         self.push_semicolon();
 
         self.ts_extend_one_tokentreeable(|inner| {
             inner.push_path(g.span(), true, &["proc_macro", "Group", "new"]);
             inner.arg2(
                 |gen1| gen1.push_path(g.span(), true, &["proc_macro", "Delimiter", delimiter_name]),
-                |gen2| gen2.push_ts_inner(),
+                |gen2| gen2.tokentree_from_iter(Self::ts_inner()),
             );
         })
     }
 
     // push a call to TokenStream::new()
     pub fn push_tokenstream_new(&mut self) {
-        self.push_path(
-            Span::call_site(),
-            true,
-            &["proc_macro", "TokenStream", "new"],
-        );
+        self.push_path(Span::call_site(), true, &["alloc", "vec", "Vec"]);
+        self.push_dcolon_joint();
+        self.push_punct(Punct::new('<', Spacing::Joint));
+        self.push_path(Span::call_site(), true, &["proc_macro", "TokenTree"]);
+        self.push_punct(Punct::new('>', Spacing::Joint));
+        self.push_path(Span::call_site(), true, &["new"]);
         self.arg0();
     }
 
