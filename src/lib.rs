@@ -12,7 +12,7 @@ use output::Output;
 #[proc_macro]
 pub fn quote(input: TokenStream) -> TokenStream {
     let mut out = Output::new();
-    out.push_new_ts(stream, input, true);
+    out.push_new_ts(stream, Span::call_site(), input, true);
     out.finalize()
 }
 
@@ -77,7 +77,7 @@ fn escape<I: Iterator<Item = TokenTree>>(
                         }
                     }
                 }
-                escape_group(out, grp.stream(), Repeat(repeat));
+                escape_group(out, grp.span(), grp.stream(), Repeat(repeat));
             } else {
                 panic!("brace or paren group not supported in escape");
                 // out.push_punct(escape_punct);
@@ -100,19 +100,19 @@ fn escape<I: Iterator<Item = TokenTree>>(
 
 fn ts_extend_ident(out: &mut Output, ident: Ident) {
     let span = ident.span();
-    out.ts_extend(|inner| {
+    out.ts_extend(span.clone(), |inner| {
         inner.push_path(
             span.clone(),
             true,
             &["macro_quote_types", "ToTokenTrees", "generate"],
         );
-        inner.arg1(|gen1| {
+        inner.arg1(span, |gen1| {
             gen1.push_ident(ident);
         });
     });
 }
 
-fn escape_group(out: &mut Output, it: TokenStream, repeat: Repeat) {
+fn escape_group(out: &mut Output, span: Span, it: TokenStream, repeat: Repeat) {
     let items = it.clone().into_iter().collect::<Vec<_>>();
 
     // Scan the variables first
@@ -158,30 +158,30 @@ fn escape_group(out: &mut Output, it: TokenStream, repeat: Repeat) {
     //    ts
     // };
     // ts.extend(_inner_ts)
-    out.push_let_ident_eq(false, &Output::ts_inner());
-    out.brace(|inner| {
+    out.push_let_ident_eq(false, &Output::ts_inner(span.clone()));
+    out.brace(span.clone(), |inner| {
         for var in escape_vars.iter() {
             inner.push_let_ident_eq(true, var);
             inner.push_ident(var.clone());
             inner.push_dot();
-            inner.push_ident(Ident::new("into_iter", Span::call_site()));
-            inner.arg0();
+            inner.push_ident(Ident::new("into_iter", span.clone()));
+            inner.arg0(span.clone());
             inner.push_semicolon();
         }
-        inner.push_let_ident_eq(true, &Output::ts());
-        inner.push_tokenstream_new();
+        inner.push_let_ident_eq(true, &Output::ts(span.clone()));
+        inner.push_tokenstream_new(span.clone());
         inner.push_semicolon();
-        inner.push_ident(Ident::new("loop", Span::call_site()));
-        inner.brace(|inner| {
+        inner.push_ident(Ident::new("loop", span.clone()));
+        inner.brace(span.clone(), |inner| {
             for var in escape_vars.iter() {
                 inner.push_let_some_ident_eq(var);
                 inner.push_ident(var.clone());
                 inner.push_dot();
-                inner.push_ident(Ident::new("next", Span::call_site()));
-                inner.arg0();
-                inner.push_ident(Ident::new("else", Span::call_site()));
-                inner.brace(|inner| {
-                    inner.push_ident(Ident::new("break", Span::call_site()));
+                inner.push_ident(Ident::new("next", span.clone()));
+                inner.arg0(span.clone());
+                inner.push_ident(Ident::new("else", span.clone()));
+                inner.brace(span.clone(), |inner| {
+                    inner.push_ident(Ident::new("break", span.clone()));
                     inner.push_semicolon();
                 });
                 inner.push_semicolon();
@@ -197,10 +197,10 @@ fn escape_group(out: &mut Output, it: TokenStream, repeat: Repeat) {
                 inner.push_escaped_punct(Punct::new(c, spacing));
             }
         });
-        inner.push_ts()
+        inner.push_ts(span.clone())
     });
     out.push_semicolon();
-    ts_extend_ident(out, Output::ts_inner());
+    ts_extend_ident(out, Output::ts_inner(span));
 }
 /*
 
