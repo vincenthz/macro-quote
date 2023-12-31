@@ -116,6 +116,7 @@ fn ts_extend_ident(out: &mut Output, ident: Ident) {
             gen2.push_ts(span);
         },
     );
+    out.push_semicolon();
 }
 
 fn escape_group(out: &mut Output, span: Span, it: TokenStream, repeat: Repeat) {
