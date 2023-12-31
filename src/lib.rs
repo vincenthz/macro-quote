@@ -100,16 +100,22 @@ fn escape<I: Iterator<Item = TokenTree>>(
 
 fn ts_extend_ident(out: &mut Output, ident: Ident) {
     let span = ident.span();
-    out.ts_extend(span.clone(), |inner| {
-        inner.push_path(
-            span.clone(),
-            true,
-            &["macro_quote_types", "ToTokenTrees", "generate"],
-        );
-        inner.arg1(span, |gen1| {
+    out.push_path(
+        span.clone(),
+        true,
+        &["macro_quote_types", "ToTokenTrees", "append_tt"],
+    );
+    out.arg2(
+        span,
+        |gen1| {
             gen1.push_ident(ident);
-        });
-    });
+        },
+        |gen2| {
+            gen2.push_punct(Punct::new('&', Spacing::Alone));
+            gen2.push_ident(Ident::new("mut", span.clone()));
+            gen2.push_ts(span);
+        },
+    );
 }
 
 fn escape_group(out: &mut Output, span: Span, it: TokenStream, repeat: Repeat) {

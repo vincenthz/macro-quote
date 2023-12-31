@@ -176,21 +176,6 @@ impl Output {
         );
     }
 
-    pub fn ts_extend<F>(&mut self, span: Span, f: F)
-    where
-        F: FnOnce(&mut Output),
-    {
-        self.push_ts(span.clone());
-        self.push_dot();
-        self.push_ident(Ident::new("append", span.clone()));
-        self.arg1(span.clone(), |gen1| {
-            gen1.push_punct(Punct::new('&', Spacing::Alone));
-            gen1.push_ident(Ident::new("mut", Span::call_site()));
-            f(gen1)
-        });
-        self.push_semicolon();
-    }
-
     pub fn ts_extend_one_tokentreeable<F>(&mut self, span: Span, f: F)
     where
         F: FnOnce(&mut Output),
@@ -201,18 +186,6 @@ impl Output {
         self.arg1(span.clone(), |gen1| gen1.wrap_tokentree(span.clone(), f));
         self.push_semicolon();
     }
-
-    /*
-    pub fn wrap_vec<F>(&mut self, f: F)
-    where
-        F: FnOnce(&mut Output),
-    {
-        self.push_path(Span::call_site(), true, &["alloc", "vec", "Vec", "from"]);
-        self.arg1(|gen1| {
-            gen1.bracket(f);
-        })
-    }
-    */
 
     pub fn wrap_tokentree<F>(&mut self, span: Span, f: F)
     where
